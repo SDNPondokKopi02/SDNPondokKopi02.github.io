@@ -1,0 +1,49 @@
+function doGet(e) {
+  // Ambil data dari spreadsheet
+  var spreadsheetId = '___GANTI DENGAN ID SREADSHEET ANDA___';
+  var settingSheetName = 'SETTING';
+  var dataSheetName = 'DATA';
+  
+  var settingSheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(settingSheetName);
+  var dataSheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(dataSheetName);
+  
+  // ambil data dari masing-masing sheet sesuai kolom tersedia
+  var settingData = getDataFromSheet(settingSheet);
+  var data = getDataFromSheet(dataSheet);
+  
+  // Gabungkan data dari kedua sheet
+  var jsonData = {
+    setting: settingData,
+    data: data
+  };
+  
+  // Konversi ke JSON
+  var jsonString = JSON.stringify(jsonData);
+  
+  // Kembalikan sebagai JSON
+  return ContentService.createTextOutput(jsonString).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Fungsi untuk mengambil data dari sebuah sheet dan mengembalikannya sebagai array
+function getDataFromSheet(sheet) {
+  var data = [];
+  var rows = sheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    var row = rows[i];
+    var rowData = {};
+    for (var j = 0; j < row.length; j++) {
+      var columnHeader = sheet.getRange(1, j + 1).getValue();
+      var cellValue = row[j];
+      // Memeriksa apakah cell merupakan tanggal dan waktu
+      if (typeof cellValue === 'object' && cellValue instanceof Date) {
+        // Mengonversi waktu menjadi string dalam format "yyyy-MM-dd HH:mm:ss"
+        var timeString = Utilities.formatDate(cellValue, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+        rowData[columnHeader] = timeString;
+      } else {
+        rowData[columnHeader] = cellValue;
+      }
+    }
+    data.push(rowData);
+  }
+  return data;
+}
